@@ -1,0 +1,11 @@
+{
+  "xrplTxHash": "0xABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF1234567890",
+  "amount": "1000",
+  "recipient": "0x1234567890123456789012345678901234567890",
+  "currency": "SKY",
+  "issuer": "rN7n7otQDd6FczFgLdSqtcsAUxDkw6fzRH",
+  "customer": "rCustomer1234567890123456789012345",
+  "timestamp": "2024-01-15T10:30:00.000Z",
+  "network": "xrpl-testnet",
+  "description": "Sample attestation for SkyShare fractional jet ownership bridge demo"
+}
