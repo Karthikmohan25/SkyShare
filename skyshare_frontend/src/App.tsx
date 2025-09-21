@@ -8,6 +8,9 @@ import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import Marketplace from "./pages/Marketplace";
 import JetDetail from "./pages/JetDetail";
+import Wallet from "./pages/Wallet";
+import Transactions from "./pages/Transactions";
+import WorkInProgress from "./pages/WorkInProgress";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,12 +27,12 @@ const App = () => (
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/marketplace" element={<Marketplace />} />
             <Route path="/jet/:id" element={<JetDetail />} />
-            <Route path="/wallet" element={<Dashboard />} />
-            <Route path="/transactions" element={<Dashboard />} />
-            <Route path="/reviews" element={<Dashboard />} />
-            <Route path="/refer" element={<Dashboard />} />
-            <Route path="/taxes" element={<Dashboard />} />
-            <Route path="/settings" element={<Dashboard />} />
+            <Route path="/wallet" element={<Wallet />} />
+            <Route path="/transactions" element={<Transactions />} />
+            <Route path="/reviews" element={<WorkInProgress />} />
+            <Route path="/refer" element={<WorkInProgress />} />
+            <Route path="/taxes" element={<WorkInProgress />} />
+            <Route path="/settings" element={<WorkInProgress />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

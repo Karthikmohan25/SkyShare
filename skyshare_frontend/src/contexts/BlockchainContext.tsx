@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { ethers } from 'ethers';
 
 // Import ABIs from files
-import FTokenABI from '../abi/FToken.json';
+import SimpleJetTokenABI from '../abi/SimpleJetToken.json';
 import DistributionABI from '../abi/Distribution.json';
 
 // Network configuration for Coston2
@@ -204,7 +204,7 @@ export const BlockchainProvider: React.FC<BlockchainProviderProps> = ({ children
         console.log('👤 Connected Address:', address);
         console.log('🔗 Chain ID:', Number(network.chainId));
         
-        const fTokenContract = new ethers.Contract(addresses.fToken, FTokenABI, signer);
+        const fTokenContract = new ethers.Contract(addresses.fToken, SimpleJetTokenABI, signer);
         const distributionContract = new ethers.Contract(addresses.distribution, DistributionABI, signer);
         
         setFToken(fTokenContract);
