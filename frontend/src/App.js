@@ -103,8 +103,14 @@ function App() {
   };
 
   useEffect(() => {
-    loadDeployedAddresses();
-    initializeApp();
+    const initApp = async () => {
+      const addresses = await loadDeployedAddresses();
+      if (addresses) {
+        // Pass addresses directly to avoid state timing issues
+        await initializeApp(addresses);
+      }
+    };
+    initApp();
   }, []);
 
   const loadDeployedAddresses = async () => {
@@ -112,23 +118,42 @@ function App() {
       const response = await fetch('/deployed-addresses.json');
       if (response.ok) {
         const addresses = await response.json();
-        setContractAddresses({
+        const newAddresses = {
           fToken: addresses.FToken,
           distribution: addresses.Distribution,
           network: addresses.network || 'localhost'
-        });
+        };
+        setContractAddresses(newAddresses);
         console.log('📄 Loaded deployed addresses:', addresses);
+        console.log('🎯 FToken Address:', addresses.FToken);
+        console.log('🎯 Distribution Address:', addresses.Distribution);
+        return newAddresses;
       }
     } catch (error) {
       console.log('⚠️  Using default addresses (deployed-addresses.json not found)');
     }
+    return null;
   };
 
-  const initializeApp = async () => {
+  const initializeApp = async (addresses = null) => {
     if (typeof window.ethereum !== 'undefined') {
       try {
+        // Use passed addresses or fall back to state
+        const fTokenAddr = addresses?.fToken || contractAddresses.fToken;
+        const distributionAddr = addresses?.distribution || contractAddresses.distribution;
+        
+        if (!fTokenAddr || !distributionAddr) {
+          console.log('⏳ Waiting for contract addresses to load...');
+          return;
+        }
+
         const provider = new ethers.BrowserProvider(window.ethereum);
         const { chainId } = await provider.getNetwork();
+        
+        console.log('🔗 Chain ID:', chainId.toString());
+        console.log('📄 FToken Address:', fTokenAddr);
+        console.log('📄 Distribution Address:', distributionAddr);
+        
         if (chainId !== 114n) {
           const switchNetwork = window.confirm("You're connected to the wrong network. Switch to Flare Testnet Coston2?");
           if (switchNetwork) {
@@ -150,9 +175,13 @@ function App() {
         const address = await signer.getAddress();
         setAccount(address);
         
-        // Initialize contracts
-        const fTokenContract = new ethers.Contract(contractAddresses.fToken, FTOKEN_ABI, signer);
-        const distributionContract = new ethers.Contract(contractAddresses.distribution, DISTRIBUTION_ABI, signer);
+        console.log('👤 Connected Address:', address);
+        
+        // Initialize contracts with confirmed addresses
+        const fTokenContract = new ethers.Contract(fTokenAddr, FTOKEN_ABI, signer);
+        const distributionContract = new ethers.Contract(distributionAddr, DISTRIBUTION_ABI, signer);
+        
+        console.log('📋 Contracts initialized successfully');
         
         setFToken(fTokenContract);
         setDistribution(distributionContract);
@@ -173,8 +202,14 @@ function App() {
 
   const loadBalances = async (address, fTokenContract, distributionContract, provider) => {
     try {
+      console.log('💰 Loading balances for address:', address);
+      console.log('📄 Using FToken contract:', fTokenContract.target);
+      
       const ethBalance = await provider.getBalance(address);
       const fSkyBalance = await fTokenContract.balanceOf(address);
+      
+      console.log('💎 Raw fSKY balance:', fSkyBalance.toString());
+      console.log('💎 Formatted fSKY balance:', ethers.formatEther(fSkyBalance));
       
       // Get claimable amount for current round
       const currentRound = await distributionContract.currentRound();
@@ -183,11 +218,14 @@ function App() {
         claimableAmount = await distributionContract.getClaimableAmount(address, currentRound);
       }
       
-      setBalances({
+      const newBalances = {
         eth: ethers.formatEther(ethBalance),
         fSky: ethers.formatEther(fSkyBalance),
         claimable: ethers.formatEther(claimableAmount)
-      });
+      };
+      
+      console.log('📊 Setting balances:', newBalances);
+      setBalances(newBalances);
     } catch (error) {
       console.error('Failed to load balances:', error);
     }
