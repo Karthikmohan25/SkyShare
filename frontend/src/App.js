@@ -214,7 +214,11 @@ function App() {
       // Get claimable amount for current round
       const currentRound = await distributionContract.currentRound();
       let claimableAmount = '0';
-      if (currentRound > 0) {
+      
+      console.log('💰 Current round for claimable check:', typeof currentRound, currentRound.toString());
+      
+      // Fix: Use Number() conversion for comparison instead of > with BigInt
+      if (Number(currentRound) > 0) {
         claimableAmount = await distributionContract.getClaimableAmount(address, currentRound);
       }
       
@@ -357,7 +361,13 @@ function App() {
     setLoading(true);
     try {
       const currentRound = await distribution.currentRound();
-      if (currentRound.eq(0)) {
+      
+      // Debug logging for BigInt handling
+      console.log('🔍 Current round type:', typeof currentRound);
+      console.log('🔍 Current round value:', currentRound.toString());
+      
+      // Fix: Use Number() conversion for comparison instead of .eq() method
+      if (Number(currentRound) === 0) {
         setStatus({ type: 'error', message: 'No distribution rounds available to claim.' });
         setLoading(false);
         return;

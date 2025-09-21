@@ -241,3 +241,149 @@ Any funds sent to them on Mainnet or any other live network WILL BE LOST.
   From:                0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266
   To:                  0x5fbdb2315678afecb367f032d93f642f64180aa3
 
+[32mhardhat_addCompilationResult[0m
+[32meth_accounts[0m
+[32meth_chainId[0m
+[32meth_accounts[0m
+[32meth_blockNumber[0m
+[32meth_chainId[0m
+[32meth_chainId (2)[0m
+[32meth_estimateGas[0m
+[32meth_getBlockByNumber[0m
+[32meth_feeHistory[0m
+[32meth_sendTransaction[0m
+  Contract deployment: FToken
+  Contract address:    0x5fc8d32690cc91d4c39d9d3abcbd16989f875707
+  Transaction:         0x779282edaf2e855dfc3752928821dba0069eaa5929c4e5b8cb87f3134167eb37
+  From:                0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266
+  Value:               0 ETH
+  Gas used:            1193026 of 1193026
+  Block #6:            0x95152c9c5e84dfbb98ce738e6793daaafc8cb8cda7493819728373497cccaf1c
+
+[32meth_chainId[0m
+[32meth_getTransactionByHash[0m
+[32meth_chainId[0m
+[32meth_getTransactionReceipt[0m
+[32meth_accounts[0m
+[32meth_chainId[0m
+[32meth_estimateGas[0m
+[32meth_feeHistory[0m
+[32meth_sendTransaction[0m
+  Contract deployment: Distribution
+  Contract address:    0x0165878a594ca255338adfa4d48449f69242eb8f
+  Transaction:         0xd9ffd71ecb6f83fa390bb76e9b24b90285e097efd7bfe88deb4b171d4597da88
+  From:                0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266
+  Value:               0 ETH
+  Gas used:            986241 of 986241
+  Block #7:            0x779718781fb32dd37f74a80ca389f483d26df2926c864d029cc48f1a2f519a9a
+
+[32meth_chainId[0m
+[32meth_getTransactionByHash[0m
+[32meth_chainId[0m
+[32meth_getTransactionReceipt[0m
+[32meth_chainId[0m
+[32meth_estimateGas[0m
+[32meth_feeHistory[0m
+[32meth_sendTransaction[0m
+  Contract call:       FToken#mint
+  Transaction:         0xf89e2e31f4b2812e14f6201eca313ca3e46843460b5499092ac43a9bcd9b3045
+  From:                0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266
+  To:                  0x5fc8d32690cc91d4c39d9d3abcbd16989f875707
+  Value:               0 ETH
+  Gas used:            99255 of 104683
+  Block #8:            0x554c15a9fe4a926dd8d9650ed1dc7e34028d0acecf6a51aac8e42d70a4a97f91
+
+[32meth_chainId[0m
+[32meth_getTransactionByHash[0m
+[32meth_chainId[0m
+[32meth_estimateGas[0m
+[32meth_feeHistory[0m
+[32meth_sendTransaction[0m
+  Contract call:       FToken#mint
+  Transaction:         0x8345ca06ba7287a973ccc559eed22c6130dcc293b859e2f387b10a448e667aad
+  From:                0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266
+  To:                  0x5fc8d32690cc91d4c39d9d3abcbd16989f875707
+  Value:               0 ETH
+  Gas used:            82143 of 87276
+  Block #9:            0x26030a89ed692796417f9be9a6aa40c55550de79c5fd2582aba8cd935fed82b2
+
+[32meth_chainId[0m
+[32meth_getTransactionByHash[0m
+[32meth_chainId[0m
+[32meth_call[0m
+  Contract call:       FToken#totalSupply
+  From:                0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266
+  To:                  0x5fc8d32690cc91d4c39d9d3abcbd16989f875707
+
+[32meth_chainId[0m
+[32meth_call[0m
+  Contract call:       FToken#balanceOf
+  From:                0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266
+  To:                  0x5fc8d32690cc91d4c39d9d3abcbd16989f875707
+
+[32meth_chainId[0m
+[32meth_call[0m
+  Contract call:       FToken#balanceOf
+  From:                0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266
+  To:                  0x5fc8d32690cc91d4c39d9d3abcbd16989f875707
+
+[32meth_chainId[0m
+[32meth_estimateGas[0m
+[32meth_feeHistory[0m
+[32meth_sendTransaction[0m
+  Contract call:       Distribution#depositRent
+  Transaction:         0xc1d074cb1ec7d8a5a43378afd5fbae28f507f789b8e542a4e7d7dc700e752f16
+  From:                0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266
+  To:                  0x0165878a594ca255338adfa4d48449f69242eb8f
+  Value:               1. ETH
+  Gas used:            186428 of 186428
+  Block #10:           0xcb6fc39384c47812efd2cd730f1a47e464859bd093d715798cde4cf6643547a7
+
+[32meth_chainId[0m
+[32meth_getTransactionByHash[0m
+[32meth_chainId[0m
+[32meth_call[0m
+  Contract call:       Distribution#currentRound
+  From:                0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266
+  To:                  0x0165878a594ca255338adfa4d48449f69242eb8f
+
+[32meth_chainId[0m
+[32meth_call[0m
+  Contract call:       Distribution#distributions
+  From:                0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266
+  To:                  0x0165878a594ca255338adfa4d48449f69242eb8f
+
+[32meth_chainId[0m
+[32meth_call[0m
+  Contract call:       Distribution#getClaimableAmount
+  From:                0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266
+  To:                  0x0165878a594ca255338adfa4d48449f69242eb8f
+
+[32meth_chainId[0m
+[32meth_call[0m
+  Contract call:       Distribution#getClaimableAmount
+  From:                0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266
+  To:                  0x0165878a594ca255338adfa4d48449f69242eb8f
+
+[32meth_chainId[0m
+[32meth_getBalance[0m
+[32meth_chainId[0m
+[32meth_getTransactionReceipt[0m
+[32meth_chainId[0m
+[32meth_estimateGas[0m
+[32meth_feeHistory[0m
+[32meth_sendTransaction[0m
+  Contract call:       Distribution#claimPayment
+  Transaction:         0x6524131800ccab0f0e9b955f1c756252df80011578c1d0d0c8402e3bdc3dc563
+  From:                0x70997970c51812dc3a010c7d01b50e0d17dc79c8
+  To:                  0x0165878a594ca255338adfa4d48449f69242eb8f
+  Value:               0 ETH
+  Gas used:            74365 of 79593
+  Block #11:           0x78893cad474ad5b2c6f2471803690f717ce3aa0a46059a1562505ec7c2df0b24
+
+[32meth_chainId[0m
+[32meth_getTransactionByHash[0m
+[32meth_chainId[0m
+[32meth_getTransactionReceipt[0m
+[32meth_chainId[0m
+[32meth_getBalance[0m

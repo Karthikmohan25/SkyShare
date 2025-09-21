@@ -9,6 +9,7 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
  * @title Distribution
  * @dev Distributes rental payments to fSKY token holders pro-rata
  * Handles dust by leaving remainder in contract for next distribution
+ * Uses scaled per-share math to prevent zero claimable amounts with small deposits
  * 
  * Production notes:
  * - Integrate with Flare's State Connector for automated rent collection
@@ -19,11 +20,15 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 contract Distribution is Ownable, ReentrancyGuard {
     IERC20 public immutable fSkyToken;
     
+    // Scaling factor to prevent integer division loss
+    uint256 private constant ACC_SCALE = 1e18;
+    
     struct DistributionRound {
         uint256 totalAmount;
         uint256 totalSupply;
         uint256 timestamp;
         uint256 dustRemaining;
+        uint256 perShareScaled; // amount per token, scaled by ACC_SCALE
     }
     
     mapping(uint256 => DistributionRound) public distributions;
@@ -57,21 +62,23 @@ contract Distribution is Ownable, ReentrancyGuard {
         uint256 totalToDistribute = msg.value + totalDustAccumulated;
         totalDustAccumulated = 0;
         
-        // Calculate dust (remainder after integer division)
-        uint256 dustThisRound = totalToDistribute % totalSupply;
-        uint256 distributionAmount = totalToDistribute - dustThisRound;
+        // Use scaled per-share math to prevent integer division loss
+        uint256 perShareScaled = (totalToDistribute * ACC_SCALE) / totalSupply;
+        uint256 distributed = (perShareScaled * totalSupply) / ACC_SCALE;
+        uint256 dust = totalToDistribute - distributed;
         
         distributions[currentRound] = DistributionRound({
-            totalAmount: distributionAmount,
+            totalAmount: distributed,
             totalSupply: totalSupply,
             timestamp: block.timestamp,
-            dustRemaining: dustThisRound
+            dustRemaining: dust,
+            perShareScaled: perShareScaled
         });
         
-        totalDustAccumulated += dustThisRound;
+        totalDustAccumulated += dust;
         
         emit RentDeposited(msg.sender, msg.value, currentRound);
-        emit DistributionCalculated(currentRound, distributionAmount, totalSupply, dustThisRound);
+        emit DistributionCalculated(currentRound, distributed, totalSupply, dust);
     }
     
     /**
@@ -89,7 +96,8 @@ contract Distribution is Ownable, ReentrancyGuard {
             return 0;
         }
         
-        return (dist.totalAmount * holderBalance) / dist.totalSupply;
+        // Use scaled per-share math for precise calculation
+        return (holderBalance * dist.perShareScaled) / ACC_SCALE;
     }
     
     /**
