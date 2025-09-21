@@ -4,14 +4,11 @@ import './App.css';
 
 // Contract ABIs (simplified for demo)
 const FTOKEN_ABI = [
-  "function name() view returns (string)",
-  "function symbol() view returns (string)",
-  "function balanceOf(address) view returns (uint256)",
   "function totalSupply() view returns (uint256)",
-  "function mintFromBridge(address to, uint256 amount, string calldata xrplTxHash)",
+  "function balanceOf(address) view returns (uint256)",
+  "function mint(address to, uint256 amount, string xrplTxHash)",
   "function hasRole(bytes32 role, address account) view returns (bool)",
-  "function BRIDGE_ROLE() view returns (bytes32)",
-  "event TokensMinted(address indexed to, uint256 amount, string xrplTxHash)"
+  "function BRIDGE_ROLE() view returns (bytes32)"
 ];
 
 const DISTRIBUTION_ABI = [
@@ -26,6 +23,43 @@ const DISTRIBUTION_ABI = [
   "event RentDeposited(address indexed depositor, uint256 amount, uint256 round)",
   "event PaymentClaimed(address indexed holder, uint256 indexed round, uint256 amount)"
 ];
+
+// Network configuration for Coston2
+const COSTON2_CONFIG = {
+  chainId: '0x72', // 114 in hex
+  chainName: 'Flare Testnet Coston2',
+  nativeCurrency: {
+    name: 'Coston2 Flare',
+    symbol: 'C2FLR',
+    decimals: 18
+  },
+  rpcUrls: ['https://coston2-api.flare.network/ext/C/rpc'],
+  blockExplorerUrls: ['https://coston2-explorer.flare.network/']
+};
+
+// Helper function to switch to Coston2 network
+const switchToCoston2 = async () => {
+  try {
+    await window.ethereum.request({
+      method: 'wallet_switchEthereumChain',
+      params: [{ chainId: COSTON2_CONFIG.chainId }],
+    });
+  } catch (switchError) {
+    // This error code indicates that the chain has not been added to MetaMask
+    if (switchError.code === 4902) {
+      try {
+        await window.ethereum.request({
+          method: 'wallet_addEthereumChain',
+          params: [COSTON2_CONFIG],
+        });
+      } catch (addError) {
+        console.error('Failed to add Coston2 network:', addError);
+      }
+    } else {
+      console.error('Failed to switch to Coston2 network:', switchError);
+    }
+  }
+};
 
 function App() {
   const [provider, setProvider] = useState(null);
@@ -50,20 +84,62 @@ function App() {
   const [rentAmount, setRentAmount] = useState('10');
   const [transactions, setTransactions] = useState([]);
 
-  // Contract addresses (these would be loaded from deployment)
-  const CONTRACT_ADDRESSES = {
+  // Contract addresses loaded from deployment
+  const [contractAddresses, setContractAddresses] = useState({
     fToken: '0x5FbDB2315678afecb367f032d93F642f64180aa3', // Default Hardhat address
-    distribution: '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512' // Default Hardhat address
+    distribution: '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512', // Default Hardhat address
+    network: 'localhost'
+  });
+
+  // Explorer configuration
+  const EXPLORER_URLS = {
+    localhost: 'http://localhost:8545',
+    coston2: 'https://coston2-explorer.flare.network'
+  };
+
+  const getExplorerUrl = (hash) => {
+    const baseUrl = EXPLORER_URLS[contractAddresses.network] || EXPLORER_URLS.coston2;
+    return `${baseUrl}/tx/${hash}`;
   };
 
   useEffect(() => {
+    loadDeployedAddresses();
     initializeApp();
   }, []);
+
+  const loadDeployedAddresses = async () => {
+    try {
+      const response = await fetch('/deployed-addresses.json');
+      if (response.ok) {
+        const addresses = await response.json();
+        setContractAddresses({
+          fToken: addresses.FToken,
+          distribution: addresses.Distribution,
+          network: addresses.network || 'localhost'
+        });
+        console.log('📄 Loaded deployed addresses:', addresses);
+      }
+    } catch (error) {
+      console.log('⚠️  Using default addresses (deployed-addresses.json not found)');
+    }
+  };
 
   const initializeApp = async () => {
     if (typeof window.ethereum !== 'undefined') {
       try {
         const provider = new ethers.BrowserProvider(window.ethereum);
+        const { chainId } = await provider.getNetwork();
+        if (chainId !== 114n) {
+          const switchNetwork = window.confirm("You're connected to the wrong network. Switch to Flare Testnet Coston2?");
+          if (switchNetwork) {
+            await switchToCoston2();
+            // Reload the page after network switch
+            window.location.reload();
+            return;
+          } else {
+            throw new Error("Wrong network");
+          }
+        }
         setProvider(provider);
         
         // Request account access
@@ -75,8 +151,8 @@ function App() {
         setAccount(address);
         
         // Initialize contracts
-        const fTokenContract = new ethers.Contract(CONTRACT_ADDRESSES.fToken, FTOKEN_ABI, signer);
-        const distributionContract = new ethers.Contract(CONTRACT_ADDRESSES.distribution, DISTRIBUTION_ABI, signer);
+        const fTokenContract = new ethers.Contract(contractAddresses.fToken, FTOKEN_ABI, signer);
+        const distributionContract = new ethers.Contract(contractAddresses.distribution, DISTRIBUTION_ABI, signer);
         
         setFToken(fTokenContract);
         setDistribution(distributionContract);
@@ -136,34 +212,67 @@ function App() {
   };
 
   const handleMint = async () => {
-    if (!fToken || !mintAmount) return;
-    
-    setLoading(true);
     try {
-      const amount = ethers.parseEther(mintAmount);
-      const xrplTxHash = '0x' + Math.random().toString(16).substr(2, 64); // Simulate XRPL tx hash
+      setStatus({ type: 'info', message: 'Minting...' });
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const { chainId } = await provider.getNetwork();
+      console.log('Current chain ID:', chainId);
+      if (chainId !== 114n) {
+        const switchNetwork = window.confirm("You're connected to the wrong network. Switch to Flare Testnet Coston2?");
+        if (switchNetwork) {
+          await switchToCoston2();
+          // Reload the page after network switch
+          window.location.reload();
+          return;
+        } else {
+          throw new Error("Wrong network");
+        }
+      }
+      const signer = await provider.getSigner();
+      const signerAddress = await signer.getAddress();
+      console.log('Signer address:', signerAddress);
+      console.log('Contract address:', contractAddresses.fToken);
       
-      const tx = await fToken.mintFromBridge(account, amount, xrplTxHash);
-      setStatus({ type: 'info', message: 'Minting transaction submitted...' });
+      const fToken = new ethers.Contract(contractAddresses.fToken, FTOKEN_ABI, signer);
+      const amt = ethers.parseEther(mintAmount || "1");
+      const att = ethers.hexlify(ethers.randomBytes(32)); // fresh attestation per click
       
-      const receipt = await tx.wait();
+      console.log('Mint parameters:', { to: signerAddress, amount: amt.toString(), attestation: att });
       
+      // Check if user has bridge role
+      const bridgeRole = await fToken.BRIDGE_ROLE();
+      const hasBridgeRole = await fToken.hasRole(bridgeRole, signerAddress);
+      console.log('Has bridge role:', hasBridgeRole);
+      
+      if (!hasBridgeRole) {
+        throw new Error("Address does not have BRIDGE_ROLE. Only bridge operators can mint tokens.");
+      }
+      
+      const tx = await fToken.mint(signerAddress, amt, att);
+      
+      // Add pending transaction with explorer link
       setTransactions(prev => [{
         type: 'Mint',
-        hash: receipt.hash,
-        amount: mintAmount + ' fSKY',
-        timestamp: new Date().toLocaleTimeString()
+        hash: tx.hash,
+        amount: (mintAmount || "1") + ' fSKY',
+        timestamp: new Date().toLocaleTimeString(),
+        explorerUrl: getExplorerUrl(tx.hash),
+        status: 'pending'
       }, ...prev.slice(0, 9)]);
       
-      await loadBalances(account, fToken, distribution, provider);
-      await loadContractInfo(fToken, distribution);
+      await tx.wait();
+      setStatus({ type: 'success', message: 'Minted!' });
       
-      setStatus({ type: 'success', message: `Successfully minted ${mintAmount} fSKY tokens!` });
-    } catch (error) {
-      console.error('Mint failed:', error);
-      setStatus({ type: 'error', message: 'Mint failed: ' + error.message });
+      // Update transaction status to confirmed
+      setTransactions(prev => prev.map(t => 
+        t.hash === tx.hash ? { ...t, status: 'confirmed' } : t
+      ));
+      
+      await loadBalances(account, fToken, distribution, provider);
+    } catch (e) {
+      console.error(e);
+      setStatus({ type: 'error', message: `Mint failed: ${e?.reason || e?.message || e}` });
     }
-    setLoading(false);
   };
 
   const handleDepositRent = async () => {
@@ -174,16 +283,24 @@ function App() {
       const amount = ethers.parseEther(rentAmount);
       
       const tx = await distribution.depositRent({ value: amount });
-      setStatus({ type: 'info', message: 'Rent deposit transaction submitted...' });
+      setStatus({ type: 'info', message: `Rent deposit transaction submitted: ${tx.hash}` });
+      
+      // Add pending transaction with explorer link
+      setTransactions(prev => [{
+        type: 'Rent Deposit',
+        hash: tx.hash,
+        amount: rentAmount + ' C2FLR',
+        timestamp: new Date().toLocaleTimeString(),
+        explorerUrl: getExplorerUrl(tx.hash),
+        status: 'pending'
+      }, ...prev.slice(0, 9)]);
       
       const receipt = await tx.wait();
       
-      setTransactions(prev => [{
-        type: 'Rent Deposit',
-        hash: receipt.hash,
-        amount: rentAmount + ' ETH',
-        timestamp: new Date().toLocaleTimeString()
-      }, ...prev.slice(0, 9)]);
+      // Update transaction status to confirmed
+      setTransactions(prev => prev.map(t => 
+        t.hash === tx.hash ? { ...t, status: 'confirmed' } : t
+      ));
       
       await loadBalances(account, fToken, distribution, provider);
       await loadContractInfo(fToken, distribution);
@@ -202,23 +319,31 @@ function App() {
     setLoading(true);
     try {
       const currentRound = await distribution.currentRound();
-      if (currentRound === 0n) {
+      if (currentRound.eq(0)) {
         setStatus({ type: 'error', message: 'No distribution rounds available to claim.' });
         setLoading(false);
         return;
       }
       
       const tx = await distribution.claimPayment(currentRound);
-      setStatus({ type: 'info', message: 'Claim transaction submitted...' });
+      setStatus({ type: 'info', message: `Claim transaction submitted: ${tx.hash}` });
+      
+      // Add pending transaction with explorer link
+      setTransactions(prev => [{
+        type: 'Claim Payment',
+        hash: tx.hash,
+        amount: balances.claimable + ' C2FLR',
+        timestamp: new Date().toLocaleTimeString(),
+        explorerUrl: getExplorerUrl(tx.hash),
+        status: 'pending'
+      }, ...prev.slice(0, 9)]);
       
       const receipt = await tx.wait();
       
-      setTransactions(prev => [{
-        type: 'Claim Payment',
-        hash: receipt.hash,
-        amount: balances.claimable + ' ETH',
-        timestamp: new Date().toLocaleTimeString()
-      }, ...prev.slice(0, 9)]);
+      // Update transaction status to confirmed
+      setTransactions(prev => prev.map(t => 
+        t.hash === tx.hash ? { ...t, status: 'confirmed' } : t
+      ));
       
       await loadBalances(account, fToken, distribution, provider);
       await loadContractInfo(fToken, distribution);
@@ -376,11 +501,23 @@ function App() {
               {transactions.map((tx, index) => (
                 <div key={index} className="transaction-item">
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                    <strong>{tx.type}</strong>
+                    <strong>{tx.type} {tx.status === 'pending' ? '⏳' : '✅'}</strong>
                     <span style={{ fontSize: '0.9rem', color: '#666' }}>{tx.timestamp}</span>
                   </div>
                   <div style={{ marginBottom: '4px' }}>Amount: {tx.amount}</div>
-                  <div className="transaction-hash">Hash: {tx.hash}</div>
+                  <div className="transaction-hash">
+                    Hash: {tx.hash.slice(0, 10)}...{tx.hash.slice(-8)}
+                    {tx.explorerUrl && (
+                      <a 
+                        href={tx.explorerUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        style={{ marginLeft: '8px', color: '#007bff', textDecoration: 'none' }}
+                      >
+                        🔗 View on Explorer
+                      </a>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

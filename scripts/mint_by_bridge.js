@@ -79,10 +79,13 @@ async function main() {
   // Step 4: Simulate additional mints for demo
   console.log("\n4️⃣  Creating additional holders for distribution demo...");
   
-  const holders = [
-    { address: user2.address, amount: "300" },
-    { address: user3.address, amount: "200" }
-  ];
+  const holders = [];
+  if (user2 && user2.address) {
+    holders.push({ address: user2.address, amount: "300" });
+  }
+  if (user3 && user3.address) {
+    holders.push({ address: user3.address, amount: "200" });
+  }
 
   for (const holder of holders) {
     const amount = hre.ethers.utils.parseEther(holder.amount);
@@ -100,7 +103,8 @@ async function main() {
   const finalSupply = await fToken.totalSupply();
   console.log("   - Total Supply:", hre.ethers.utils.formatEther(finalSupply), "fSKY");
   
-  for (const signer of [user1, user2, user3]) {
+  const signers = [user1, user2, user3].filter(signer => signer && signer.address);
+  for (const signer of signers) {
     const balance = await fToken.balanceOf(signer.address);
     if (balance.gt(0)) {
       console.log(`   - ${signer.address}: ${hre.ethers.utils.formatEther(balance)} fSKY`);
