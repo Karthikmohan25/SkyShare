@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,8 +27,9 @@ const LimitBuyOrderModal = ({ isOpen, onClose, jet }: LimitBuyOrderModalProps) =
   const [paymentMethod, setPaymentMethod] = useState("skyshare-wallet");
   const [paymentCurrency, setPaymentCurrency] = useState("FLR");
   const [isLoading, setIsLoading] = useState(false);
+  const [hasBridgeRole, setHasBridgeRole] = useState<boolean | null>(null);
   
-  const { mintTokens, isConnected } = useBlockchain();
+  const { mintTokens, isConnected, checkBridgeRole, explorerTx } = useBlockchain();
   const { toast } = useToast();
 
   const presetQuantities = [
@@ -44,6 +45,21 @@ const LimitBuyOrderModal = ({ isOpen, onClose, jet }: LimitBuyOrderModalProps) =
     setQuantity(shares);
   };
 
+  // Check bridge role when modal opens
+  const checkRole = async () => {
+    if (isConnected) {
+      const hasRole = await checkBridgeRole();
+      setHasBridgeRole(hasRole);
+    }
+  };
+
+  // Check role when connected status changes
+  React.useEffect(() => {
+    if (isOpen && isConnected) {
+      checkRole();
+    }
+  }, [isOpen, isConnected]);
+
   const handlePlaceOrder = async () => {
     if (!isConnected) {
       toast({
@@ -54,21 +70,47 @@ const LimitBuyOrderModal = ({ isOpen, onClose, jet }: LimitBuyOrderModalProps) =
       return;
     }
 
+    if (hasBridgeRole === null) {
+      await checkRole();
+      return;
+    }
+
+    if (!hasBridgeRole) {
+      toast({
+        title: "Bridge Role Required",
+        description: "You need BRIDGE_ROLE to mint tokens. Please run the grant_bridge_role script first.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
-      // For demo purposes, we'll mint the equivalent fSKY tokens
+      // Mint fSKY tokens equivalent to the purchase
       const txHash = await mintTokens(quantity.toString());
       
       toast({
         title: "Order placed successfully!",
-        description: `Purchased ${quantity} shares of ${jet.name}. Transaction: ${txHash.slice(0, 10)}...`,
+        description: (
+          <div>
+            <p>Minted {quantity} fSKY tokens for {jet.name}</p>
+            <a 
+              href={explorerTx(txHash)} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-blue-500 hover:underline"
+            >
+              🔗 View on Explorer
+            </a>
+          </div>
+        ),
       });
       
       onClose();
     } catch (error: any) {
       toast({
         title: "Order failed",
-        description: error.message,
+        description: error.message || "Failed to place order.",
         variant: "destructive"
       });
     } finally {
@@ -206,14 +248,33 @@ const LimitBuyOrderModal = ({ isOpen, onClose, jet }: LimitBuyOrderModalProps) =
               </div>
             </div>
 
+            {/* Bridge Role Status */}
+            {isConnected && hasBridgeRole === false && (
+              <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded">
+                <p className="text-sm">
+                  <strong>BRIDGE_ROLE Required:</strong> You need to run the grant_bridge_role script to mint tokens.
+                </p>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={checkRole}
+                  className="mt-2"
+                >
+                  Re-check Role
+                </Button>
+              </div>
+            )}
+
             {/* Place Order Button */}
             <Button 
               onClick={handlePlaceOrder}
-              disabled={isLoading || !isConnected}
+              disabled={isLoading || !isConnected || (hasBridgeRole === false)}
               className="w-full"
               size="lg"
             >
-              {isLoading ? "Processing Order..." : `Place Order - $${totalPrice}`}
+              {isLoading ? "Processing Order..." : 
+               hasBridgeRole === false ? "BRIDGE_ROLE Required" :
+               `Place Order - $${totalPrice}`}
             </Button>
 
             {!isConnected && (

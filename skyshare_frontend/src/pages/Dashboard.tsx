@@ -19,7 +19,10 @@ const Dashboard = () => {
     mintTokens, 
     depositRent, 
     claimPayment,
-    checkBridgeRole 
+    checkBridgeRole,
+    explorerTx,
+    chainId,
+    account
   } = useBlockchain();
   
   const { toast } = useToast();
@@ -83,7 +86,19 @@ const Dashboard = () => {
       const txHash = await depositRent(rentAmount);
       toast({
         title: "Rent deposited successfully!",
-        description: `Transaction: ${txHash.slice(0, 10)}...`,
+        description: (
+          <div>
+            <p>Transaction: {txHash.slice(0, 10)}...</p>
+            <a 
+              href={explorerTx(txHash)} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-blue-500 hover:underline"
+            >
+              🔗 View on Explorer
+            </a>
+          </div>
+        ),
       });
       setRentAmount("1");
     } catch (error: any) {
@@ -107,17 +122,42 @@ const Dashboard = () => {
       return;
     }
 
+    // Check if there's anything to claim
+    const claimableAmount = parseFloat(balances.claimable);
+    if (claimableAmount === 0) {
+      toast({
+        title: "Nothing to claim",
+        description: "You don't have any claimable rent payments at the moment. Try depositing some rent first to test the distribution system.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
+      console.log("🎯 Attempting to claim payment. Claimable amount:", balances.claimable);
       const txHash = await claimPayment();
       toast({
         title: "Payment claimed successfully!",
-        description: `Transaction: ${txHash.slice(0, 10)}...`,
+        description: (
+          <div>
+            <p>Claimed {claimableAmount.toFixed(4)} C2FLR</p>
+            <a 
+              href={explorerTx(txHash)} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-blue-500 hover:underline"
+            >
+              🔗 View on Explorer
+            </a>
+          </div>
+        ),
       });
     } catch (error: any) {
+      console.error("❌ Claim payment error:", error);
       toast({
         title: "Claim failed",
-        description: error.message,
+        description: error.message || "Failed to claim payment. Make sure you have claimable amounts available.",
         variant: "destructive"
       });
     } finally {
@@ -142,8 +182,9 @@ const Dashboard = () => {
           )}
         </div>
         
-        {/* Account Value Section */}
+        {/* Main Dashboard Grid - Exact format from image */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Left Side - Account Value Card */}
           <Card className="p-6">
             <div className="space-y-4">
               <div className="flex items-center justify-between">
@@ -199,33 +240,38 @@ const Dashboard = () => {
             </div>
           </Card>
 
+          {/* Right Side - Stats Grid (2x3 format from image) */}
           <div className="grid grid-cols-2 gap-4">
             <Card className="p-4">
-              <p className="text-sm text-muted-foreground">Rent Balance</p>
-              <p className="text-2xl font-bold">${claimableValue.toFixed(2)}</p>
+              <p className="text-sm text-muted-foreground">Claimable Rent</p>
+              <p className="text-2xl font-bold">{parseFloat(balances.claimable).toFixed(4)} C2FLR</p>
             </Card>
             <Card className="p-4">
-              <p className="text-sm text-muted-foreground">Total Rent Earned</p>
-              <p className="text-2xl font-bold text-primary">${claimableValue.toFixed(2)} <span className="text-sm text-muted-foreground">0.00%</span></p>
+              <p className="text-sm text-muted-foreground">Contract Balance</p>
+              <p className="text-2xl font-bold text-primary">{parseFloat(contractInfo.contractBalance).toFixed(4)} C2FLR</p>
             </Card>
             <Card className="p-4">
-              <p className="text-sm text-muted-foreground">fSKY Tokens ⓘ</p>
+              <p className="text-sm text-muted-foreground">fSKY Balance</p>
               <p className="text-2xl font-bold">{parseFloat(balances.fSky).toFixed(2)}</p>
             </Card>
             <Card className="p-4">
-              <p className="text-sm text-muted-foreground">Jets Owned ⓘ</p>
-              <p className="text-2xl font-bold">{fSkyBalance > 0 ? "1" : "0"}</p>
+              <p className="text-sm text-muted-foreground">Total Supply</p>
+              <p className="text-2xl font-bold">{parseFloat(contractInfo.totalSupply).toFixed(2)}</p>
             </Card>
             <Card className="p-4">
-              <p className="text-sm text-muted-foreground">Current Round ⓘ</p>
+              <p className="text-sm text-muted-foreground">Current Round</p>
               <p className="text-2xl font-bold text-primary">{contractInfo.currentRound}</p>
             </Card>
             <Card className="p-4">
-              <p className="text-sm text-muted-foreground">Total Supply ⓘ</p>
-              <p className="text-2xl font-bold text-primary">{parseFloat(contractInfo.totalSupply).toFixed(0)} <span className="text-sm text-muted-foreground">fSKY</span></p>
+              <p className="text-sm text-muted-foreground">Est. Jet Value</p>
+              <p className="text-2xl font-bold">${estimatedValue.toFixed(2)}</p>
             </Card>
           </div>
         </div>
+
+
+
+
 
         {/* Blockchain Actions Section */}
         <Card className="p-6">
@@ -235,7 +281,7 @@ const Dashboard = () => {
               <Dialog>
                 <DialogTrigger asChild>
                   <Button variant="outline" className="w-full">
-                    Mint fSKY Tokens
+                    Mint (Bridge Role Required)
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
@@ -278,7 +324,7 @@ const Dashboard = () => {
             </Button>
             
             <Button 
-              onClick={() => window.open(`https://coston2-explorer.flare.network/address/${contractInfo.totalSupply}`, '_blank')} 
+              onClick={() => window.open(`https://coston2-explorer.flare.network/address/${distribution?.target || ''}`, '_blank')} 
               variant="outline"
             >
               View on Explorer

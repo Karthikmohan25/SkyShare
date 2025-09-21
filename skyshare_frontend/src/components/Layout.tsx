@@ -21,7 +21,7 @@ interface LayoutProps {
 
 const Layout = ({ children }: LayoutProps) => {
   const location = useLocation();
-  const { isConnected, account, connectWallet, balances } = useBlockchain();
+  const { isConnected, account, connectWallet, disconnect, balances, chainId } = useBlockchain();
 
   const navigation = [
     { name: "Assets Overview", href: "/dashboard", icon: Home },
@@ -91,7 +91,7 @@ const Layout = ({ children }: LayoutProps) => {
             </h1>
             <p className="text-muted-foreground">
               {isConnected 
-                ? `Balance: ${parseFloat(balances.fSky).toFixed(2)} fSKY | ${parseFloat(balances.eth).toFixed(4)} C2FLR`
+                ? `Balance: ${parseFloat(balances.fSky).toFixed(2)} fSKY | ${parseFloat(balances.eth).toFixed(4)} C2FLR | Chain: ${chainId || 'Unknown'}`
                 : 'Connect your wallet to start investing in jets.'
               }
             </p>
@@ -102,8 +102,8 @@ const Layout = ({ children }: LayoutProps) => {
                 <Button variant="outline" size="sm">
                   Recent Updates <span className="ml-1 bg-destructive text-destructive-foreground rounded-full px-1 text-xs">3</span>
                 </Button>
-                <Button variant="outline" size="sm">
-                  {account.slice(0, 6)}...{account.slice(-4)} ▼
+                <Button variant="outline" size="sm" onClick={disconnect}>
+                  🔌 Disconnect
                 </Button>
               </>
             ) : (

@@ -1,53 +1,50 @@
-const hre = require("hardhat");
+const { ethers } = require("hardhat");
 
 async function main() {
-  console.log("🔑 Checking and granting bridge role...\n");
-
-  const [deployer] = await hre.ethers.getSigners();
-  console.log("Using account:", deployer.address);
-
-  // Load deployed contract addresses
+  // Load deployed addresses
   const deployedAddresses = require("../deployed-addresses.json");
-  const fTokenAddress = deployedAddresses.FToken;
   
-  console.log("FToken address:", fTokenAddress);
-
-  // Get contract instance
-  const fToken = await hre.ethers.getContractAt("FToken", fTokenAddress);
-
-  // Check current roles
-  const adminRole = await fToken.DEFAULT_ADMIN_ROLE();
-  const bridgeRole = await fToken.BRIDGE_ROLE();
-  
-  const hasAdminRole = await fToken.hasRole(adminRole, deployer.address);
-  const hasBridgeRole = await fToken.hasRole(bridgeRole, deployer.address);
-  
-  console.log("Admin role:", hasAdminRole);
-  console.log("Bridge role:", hasBridgeRole);
-
-  if (!hasBridgeRole) {
-    console.log("\n🔧 Granting bridge role to deployer...");
-    const tx = await fToken.addBridgeOperator(deployer.address);
-    await tx.wait();
-    console.log("✅ Bridge role granted!");
-    
-    // Verify
-    const newBridgeRole = await fToken.hasRole(bridgeRole, deployer.address);
-    console.log("Bridge role after grant:", newBridgeRole);
-  } else {
-    console.log("✅ Already has bridge role!");
+  if (!deployedAddresses.FToken) {
+    throw new Error("FToken address not found in deployed-addresses.json");
   }
 
-  console.log("\n🎯 Ready to mint tokens!");
+  // Get the FToken contract
+  const FToken = await ethers.getContractFactory("FToken");
+  const fToken = FToken.attach(deployedAddresses.FToken);
+
+  // Get the address from environment variable or use the one from .env
+  const YOUR_METAMASK_ADDRESS = process.env.GRANT_TO || "0xB40B1D95058857Da46f8498659b422EE9965CEb6"; // Default to deployer
+  
+  if (!YOUR_METAMASK_ADDRESS || YOUR_METAMASK_ADDRESS === "0xB616...38Bb") {
+    console.error("❌ Please set GRANT_TO environment variable with your MetaMask address");
+    console.error("Example: export GRANT_TO=0xYourMetaMaskAddress");
+    process.exit(1);
+  }
+  
+  console.log("Granting BRIDGE_ROLE to:", YOUR_METAMASK_ADDRESS);
+  console.log("FToken contract:", deployedAddresses.FToken);
+
+  // Get BRIDGE_ROLE constant
+  const BRIDGE_ROLE = await fToken.BRIDGE_ROLE();
+  console.log("BRIDGE_ROLE:", BRIDGE_ROLE);
+
+  // Grant the role
+  const tx = await fToken.grantRole(BRIDGE_ROLE, YOUR_METAMASK_ADDRESS);
+  console.log("Transaction sent:", tx.hash);
+  
+  await tx.wait();
+  console.log("✅ BRIDGE_ROLE granted successfully!");
+  
+  // Verify the role was granted
+  const hasRole = await fToken.hasRole(BRIDGE_ROLE, YOUR_METAMASK_ADDRESS);
+  console.log("Verification - Has BRIDGE_ROLE:", hasRole);
+  
+  console.log("🔗 Explorer:", `https://coston2-explorer.flare.network/tx/${tx.hash}`);
 }
 
-if (require.main === module) {
-  main()
-    .then(() => process.exit(0))
-    .catch((error) => {
-      console.error("❌ Failed:", error);
-      process.exit(1);
-    });
-}
-
-module.exports = main;
+main()
+  .then(() => process.exit(0))
+  .catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });

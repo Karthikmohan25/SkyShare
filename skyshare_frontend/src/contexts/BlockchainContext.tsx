@@ -1,25 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { ethers } from 'ethers';
 
-// Contract ABIs - Exact match with deployed contracts
-const FTOKEN_ABI = [
-  "function totalSupply() view returns (uint256)",
-  "function balanceOf(address) view returns (uint256)",
-  "function mint(address to, uint256 amount, string xrplTxHash)",
-  "function hasRole(bytes32 role, address account) view returns (bool)",
-  "function BRIDGE_ROLE() view returns (bytes32)"
-];
-
-const DISTRIBUTION_ABI = [
-  "function currentRound() view returns (uint256)",
-  "function getClaimableAmount(address holder, uint256 round) view returns (uint256)",
-  "function getUnclaimedRounds(address holder) view returns (uint256[])",
-  "function claimPayment(uint256 round)",
-  "function depositRent() payable",
-  "function totalDustAccumulated() view returns (uint256)",
-  "function getContractBalance() view returns (uint256)",
-  "function distributions(uint256) view returns (uint256 totalAmount, uint256 totalSupply, uint256 timestamp, uint256 dustRemaining, uint256 perShareScaled)"
-];
+// Import ABIs from files
+import FTokenABI from '../abi/FToken.json';
+import DistributionABI from '../abi/Distribution.json';
 
 // Network configuration for Coston2
 const COSTON2_CONFIG = {
@@ -44,6 +28,7 @@ interface BlockchainContextType {
   provider: ethers.BrowserProvider | null;
   signer: ethers.JsonRpcSigner | null;
   account: string;
+  chainId: number | null;
   fToken: ethers.Contract | null;
   distribution: ethers.Contract | null;
   balances: {
@@ -60,11 +45,13 @@ interface BlockchainContextType {
   isConnected: boolean;
   isLoading: boolean;
   connectWallet: () => Promise<void>;
+  disconnect: () => void;
   refreshBalances: () => Promise<void>;
   mintTokens: (amount: string) => Promise<string>;
   depositRent: (amount: string) => Promise<string>;
   claimPayment: () => Promise<string>;
   checkBridgeRole: () => Promise<boolean>;
+  explorerTx: (txHash: string) => string;
 }
 
 const BlockchainContext = createContext<BlockchainContextType | undefined>(undefined);
@@ -85,6 +72,7 @@ export const BlockchainProvider: React.FC<BlockchainProviderProps> = ({ children
   const [provider, setProvider] = useState<ethers.BrowserProvider | null>(null);
   const [signer, setSigner] = useState<ethers.JsonRpcSigner | null>(null);
   const [account, setAccount] = useState<string>('');
+  const [chainId, setChainId] = useState<number | null>(null);
   const [fToken, setFToken] = useState<ethers.Contract | null>(null);
   const [distribution, setDistribution] = useState<ethers.Contract | null>(null);
   const [contractAddresses, setContractAddresses] = useState<ContractAddresses>({
@@ -127,6 +115,25 @@ export const BlockchainProvider: React.FC<BlockchainProviderProps> = ({ children
     return null;
   };
 
+  // Explorer link helper
+  const explorerTx = (txHash: string): string => {
+    return `https://coston2-explorer.flare.network/tx/${txHash}`;
+  };
+
+  // Disconnect function
+  const disconnect = () => {
+    setProvider(null);
+    setSigner(null);
+    setAccount('');
+    setChainId(null);
+    setFToken(null);
+    setDistribution(null);
+    setIsConnected(false);
+    setBalances({ eth: '0', fSky: '0', claimable: '0' });
+    setContractInfo({ totalSupply: '0', currentRound: '0', totalDust: '0', contractBalance: '0' });
+    console.log('🔌 Disconnected from wallet');
+  };
+
   // Switch to Coston2 network
   const switchToCoston2 = async () => {
     try {
@@ -155,12 +162,13 @@ export const BlockchainProvider: React.FC<BlockchainProviderProps> = ({ children
     const network = await provider.getNetwork();
     console.log('🔗 Current Chain ID:', network.chainId.toString());
     
-    if (network.chainId !== 114n) {
+    if (Number(network.chainId) !== 114) {
       console.log('❌ Wrong network detected. Expected Coston2 (114)');
       const switchNetwork = window.confirm("You're connected to the wrong network. Switch to Flare Testnet Coston2?");
       if (switchNetwork) {
         await switchToCoston2();
-        return false; // Will reload
+        window.location.reload(); // Reload after network switch
+        return false;
       } else {
         throw new Error("Wrong network - please switch to Coston2");
       }
@@ -190,10 +198,14 @@ export const BlockchainProvider: React.FC<BlockchainProviderProps> = ({ children
         const address = await signer.getAddress();
         setAccount(address);
         
-        console.log('👤 Connected Address:', address);
+        const network = await provider.getNetwork();
+        setChainId(Number(network.chainId));
         
-        const fTokenContract = new ethers.Contract(addresses.fToken, FTOKEN_ABI, signer);
-        const distributionContract = new ethers.Contract(addresses.distribution, DISTRIBUTION_ABI, signer);
+        console.log('👤 Connected Address:', address);
+        console.log('🔗 Chain ID:', Number(network.chainId));
+        
+        const fTokenContract = new ethers.Contract(addresses.fToken, FTokenABI, signer);
+        const distributionContract = new ethers.Contract(addresses.distribution, DistributionABI, signer);
         
         setFToken(fTokenContract);
         setDistribution(distributionContract);
@@ -230,11 +242,11 @@ export const BlockchainProvider: React.FC<BlockchainProviderProps> = ({ children
       console.log('💎 Raw fSKY balance:', fSkyBalance.toString());
       
       const currentRound = await distributionContract.currentRound();
-      console.log('🔄 Current round (raw):', currentRound.toString(), 'type:', typeof currentRound);
+      console.log('🔄 Current round (raw):', currentRound.toString());
       
-      let claimableAmount = '0';
+      let claimableAmount = 0n;
       
-      // Fix BigInt comparison
+      // Use Number() conversion for comparison (ethers v6 pattern)
       if (Number(currentRound) > 0) {
         claimableAmount = await distributionContract.getClaimableAmount(address, currentRound);
         console.log('💰 Raw claimable amount:', claimableAmount.toString());
@@ -272,7 +284,7 @@ export const BlockchainProvider: React.FC<BlockchainProviderProps> = ({ children
       
       const formattedInfo = {
         totalSupply: ethers.formatEther(totalSupply),
-        currentRound: Number(currentRound).toString(), // Convert BigInt to number then string
+        currentRound: currentRound.toString(), // Keep as bigint string
         totalDust: ethers.formatEther(totalDust),
         contractBalance: ethers.formatEther(contractBalance)
       };
@@ -342,7 +354,7 @@ export const BlockchainProvider: React.FC<BlockchainProviderProps> = ({ children
     
     const tx = await fToken.mint(signerAddress, amt, att);
     console.log('📤 Mint transaction submitted:', tx.hash);
-    await tx.wait();
+    const receipt = await tx.wait();
     
     await refreshBalances();
     return tx.hash;
@@ -361,19 +373,27 @@ export const BlockchainProvider: React.FC<BlockchainProviderProps> = ({ children
 
   // Claim payment
   const claimPayment = async (): Promise<string> => {
-    if (!distribution) throw new Error('Distribution contract not initialized');
+    if (!distribution || !account) throw new Error('Distribution contract not initialized or no account');
     
+    // Re-read claimable first
     const currentRound = await distribution.currentRound();
-    console.log('🎯 Claiming for round:', currentRound.toString(), 'type:', typeof currentRound);
+    console.log('🎯 Current round:', currentRound.toString());
     
-    // Fix BigInt comparison - use Number() conversion
     if (Number(currentRound) === 0) {
       throw new Error('No distribution rounds available to claim.');
     }
     
+    // Check claimable amount
+    const claimableAmount = await distribution.getClaimableAmount(account, currentRound);
+    console.log('💰 Claimable amount:', ethers.formatEther(claimableAmount));
+    
+    if (Number(claimableAmount) === 0) {
+      throw new Error('Nothing to claim for the current round.');
+    }
+    
     const tx = await distribution.claimPayment(currentRound);
     console.log('📤 Claim transaction submitted:', tx.hash);
-    await tx.wait();
+    const receipt = await tx.wait();
     
     await refreshBalances();
     return tx.hash;
@@ -434,6 +454,7 @@ export const BlockchainProvider: React.FC<BlockchainProviderProps> = ({ children
     provider,
     signer,
     account,
+    chainId,
     fToken,
     distribution,
     balances,
@@ -441,11 +462,13 @@ export const BlockchainProvider: React.FC<BlockchainProviderProps> = ({ children
     isConnected,
     isLoading,
     connectWallet,
+    disconnect,
     refreshBalances,
     mintTokens,
     depositRent,
     claimPayment,
-    checkBridgeRole
+    checkBridgeRole,
+    explorerTx
   };
 
   return (
