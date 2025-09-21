@@ -1,0 +1,10 @@
+[
+  "function currentRound() view returns (uint256)",
+  "function depositRent() payable",
+  "function claimPayment(uint256 round)",
+  "function getClaimableAmount(address holder, uint256 round) view returns (uint256)",
+  "function getUnclaimedRounds(address holder) view returns (uint256[])",
+  "function distributions(uint256) view returns (uint256 totalAmount, uint256 totalSupply, uint256 timestamp, uint256 dustRemaining, uint256 perShareScaled)",
+  "event RentDeposited(address indexed depositor, uint256 amount, uint256 round)",
+  "event PaymentClaimed(address indexed holder, uint256 indexed round, uint256 amount)"
+]

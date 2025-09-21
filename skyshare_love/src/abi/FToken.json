@@ -1,0 +1,7 @@
+[
+  "function balanceOf(address owner) view returns (uint256)",
+  "function totalSupply() view returns (uint256)",
+  "function mint(address to, uint256 amount, string xrplTxHash)",
+  "function hasRole(bytes32 role, address account) view returns (bool)",
+  "event Transfer(address indexed from, address indexed to, uint256 value)"
+]

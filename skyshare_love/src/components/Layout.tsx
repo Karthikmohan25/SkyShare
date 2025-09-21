@@ -10,9 +10,11 @@ import {
   BarChart3, 
   CreditCard,
   FileText,
-  Plane
+  Plane,
+  LogOut
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useWeb3 } from "@/contexts/Web3Context";
 
 interface LayoutProps {
   children: ReactNode;
@@ -20,6 +22,7 @@ interface LayoutProps {
 
 const Layout = ({ children }: LayoutProps) => {
   const location = useLocation();
+  const { address, isConnected, isConnecting, balance, chainId, isCoston2, connectWallet, disconnectWallet } = useWeb3();
 
   const navigation = [
     { name: "Assets Overview", href: "/dashboard", icon: Home },
@@ -84,16 +87,40 @@ const Layout = ({ children }: LayoutProps) => {
         {/* Header */}
         <header className="bg-card border-b border-border p-4 flex justify-between items-center">
           <div>
-            <h1 className="text-2xl font-bold">Welcome Tariq!</h1>
-            <p className="text-muted-foreground">Get $50 when your friends invest.</p>
+            <h1 className="text-2xl font-bold">
+              Welcome {isConnected ? `${address?.slice(0, 6)}...${address?.slice(-4)}` : 'Guest'}!
+            </h1>
+            <p className="text-muted-foreground">
+              {isConnected ? (
+                <>
+                  Balance: {parseFloat(balance).toFixed(4)} C2FLR
+                  {!isCoston2 && <span className="text-destructive ml-2">⚠️ Switch to Coston2!</span>}
+                  {chainId && <span className="ml-2">Chain: {chainId}</span>}
+                </>
+              ) : 'Connect your wallet to get started'}
+            </p>
           </div>
           <div className="flex items-center space-x-4">
-            <Button variant="outline" size="sm">
-              Recent Updates <span className="ml-1 bg-destructive text-destructive-foreground rounded-full px-1 text-xs">3</span>
-            </Button>
-            <Button variant="outline" size="sm">
-              Tariq Islam ▼
-            </Button>
+            {!isConnected ? (
+              <Button 
+                variant="hero" 
+                size="sm" 
+                onClick={connectWallet}
+                disabled={isConnecting}
+              >
+                {isConnecting ? 'Connecting...' : 'Connect Wallet'}
+              </Button>
+            ) : (
+              <>
+                <Button variant="outline" size="sm">
+                  Recent Updates <span className="ml-1 bg-destructive text-destructive-foreground rounded-full px-1 text-xs">3</span>
+                </Button>
+                <Button variant="outline" size="sm" onClick={disconnectWallet}>
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Disconnect
+                </Button>
+              </>
+            )}
           </div>
         </header>
 

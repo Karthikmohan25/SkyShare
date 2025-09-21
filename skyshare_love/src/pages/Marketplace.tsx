@@ -3,12 +3,17 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Heart, ChevronLeft, ChevronRight } from "lucide-react";
+import { Heart, ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import Layout from "@/components/Layout";
-import { mockJets } from "@/data/mockJets";
+import { mockJets, Jet } from "@/data/mockJets";
+import BuyOrderModal from "@/components/BuyOrderModal";
+import AddWalletModal from "@/components/AddWalletModal";
 
 const Marketplace = () => {
   const [likedJets, setLikedJets] = useState<Set<string>>(new Set());
+  const [selectedJet, setSelectedJet] = useState<Jet | null>(null);
+  const [showBuyModal, setShowBuyModal] = useState(false);
+  const [showWalletModal, setShowWalletModal] = useState(false);
 
   const toggleLike = (jetId: string) => {
     const newLiked = new Set(likedJets);
@@ -20,12 +25,31 @@ const Marketplace = () => {
     setLikedJets(newLiked);
   };
 
+  const handleInvestClick = (jet: Jet) => {
+    setSelectedJet(jet);
+    setShowBuyModal(true);
+  };
+
+  const handleCloseBuyModal = () => {
+    setShowBuyModal(false);
+    setSelectedJet(null);
+  };
+
   return (
     <Layout>
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <h2 className="text-3xl font-bold">Jet Marketplace</h2>
-          <Button variant="outline">Filter & Sort</Button>
+          <div>
+            <h2 className="text-3xl font-bold">Jet Marketplace</h2>
+            <p className="text-muted-foreground mt-1">Recent listings • Fractional jet ownership</p>
+          </div>
+          <div className="flex space-x-3">
+            <Button variant="outline" onClick={() => setShowWalletModal(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add Payment Method
+            </Button>
+            <Button variant="outline">Filter & Sort</Button>
+          </div>
         </div>
 
         {/* Jets Grid */}
@@ -95,18 +119,36 @@ const Marketplace = () => {
                   </p>
                 </div>
 
-                <Link to={`/jet/${jet.id}`}>
+                <div className="space-y-2">
                   <Button 
                     variant="hero" 
                     className="w-full"
+                    onClick={() => handleInvestClick(jet)}
                   >
-                    Available: {jet.availableTokens.toLocaleString()} tokens at ${jet.tokenPrice}
+                    Invest
                   </Button>
-                </Link>
+                  <p className="text-xs text-center text-muted-foreground">
+                    {jet.availableTokens.toLocaleString()} tokens available at ${jet.tokenPrice} each
+                  </p>
+                </div>
               </CardContent>
             </Card>
           ))}
         </div>
+
+        {/* Modals */}
+        {selectedJet && (
+          <BuyOrderModal
+            isOpen={showBuyModal}
+            onClose={handleCloseBuyModal}
+            jet={selectedJet}
+          />
+        )}
+        
+        <AddWalletModal
+          isOpen={showWalletModal}
+          onClose={() => setShowWalletModal(false)}
+        />
       </div>
     </Layout>
   );

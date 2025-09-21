@@ -3,18 +3,15 @@ import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Heart, Users, Gauge, Clock, Calendar } from "lucide-react";
 import Layout from "@/components/Layout";
 import { mockJets } from "@/data/mockJets";
+import BuyOrderModal from "@/components/BuyOrderModal";
 
 const JetDetail = () => {
   const { id } = useParams();
   const jet = mockJets.find(j => j.id === id);
-  const [selectedTokens, setSelectedTokens] = useState(25);
-  const [customAmount, setCustomAmount] = useState("25");
+  const [showBuyModal, setShowBuyModal] = useState(false);
 
   if (!jet) {
     return (
@@ -28,14 +25,6 @@ const JetDetail = () => {
       </Layout>
     );
   }
-
-  const tokenOptions = [
-    { tokens: 1, price: 50 },
-    { tokens: 10, price: 505 }, 
-    { tokens: 25, price: 1262 },
-    { tokens: 50, price: 2524 },
-    { tokens: 100, price: 5047 }
-  ];
 
   return (
     <Layout>
@@ -124,111 +113,77 @@ const JetDetail = () => {
             </Card>
           </div>
 
-          {/* Right Column - Purchase Interface */}
+          {/* Right Column - Investment Summary */}
           <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Jet token quantity ⓘ</CardTitle>
+                <CardTitle>Investment Opportunity</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Token Selection */}
-                <div className="grid grid-cols-5 gap-2">
-                  {tokenOptions.map((option) => (
-                    <Button
-                      key={option.tokens}
-                      variant={selectedTokens === option.tokens ? "default" : "outline"}
-                      className="flex flex-col h-auto py-3"
-                      onClick={() => {
-                        setSelectedTokens(option.tokens);
-                        setCustomAmount(option.tokens.toString());
-                      }}
-                    >
-                      <span className="text-sm">{option.tokens} tokens</span>
-                      <span className="text-xs text-muted-foreground">${option.price}</span>
-                      {option.tokens === 25 && (
-                        <Badge variant="secondary" className="mt-1 text-xs">MOST POPULAR</Badge>
-                      )}
-                    </Button>
-                  ))}
+                {/* Key Metrics */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="text-center p-4 bg-muted rounded-lg">
+                    <p className="text-sm text-muted-foreground">Token Price</p>
+                    <p className="text-2xl font-bold">${jet.tokenPrice}</p>
+                  </div>
+                  <div className="text-center p-4 bg-muted rounded-lg">
+                    <p className="text-sm text-muted-foreground">Available</p>
+                    <p className="text-2xl font-bold">{jet.availableTokens.toLocaleString()}</p>
+                  </div>
                 </div>
 
-                {/* Custom Quantity */}
-                <div>
-                  <Label htmlFor="custom-quantity">Custom quantity</Label>
-                  <Input
-                    id="custom-quantity"
-                    type="number"
-                    value={customAmount}
-                    onChange={(e) => setCustomAmount(e.target.value)}
-                    placeholder="25"
-                    className="mt-1"
-                  />
-                </div>
-
-                {/* Order Type */}
-                <div>
-                  <Label htmlFor="order-type">Order type</Label>
-                  <Select defaultValue="limit">
-                    <SelectTrigger className="mt-1">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="limit">Limit</SelectItem>
-                      <SelectItem value="market">Market</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Payment Method */}
-                <div>
-                  <Label htmlFor="payment-method">Payment method</Label>
-                  <Select defaultValue="lofty-wallet">
-                    <SelectTrigger className="mt-1">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="lofty-wallet">Lofty Wallet</SelectItem>
-                      <SelectItem value="credit-card">Credit Card</SelectItem>
-                      <SelectItem value="bank-account">Bank Account</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Payment Currency */}
-                <div className="flex justify-between items-center">
-                  <Label>Payment currency</Label>
-                  <span className="text-sm text-muted-foreground">0.000000 available</span>
+                {/* Investment Highlights */}
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Rental Yield</span>
+                    <span className="font-semibold text-primary">{jet.rentalYield}%</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Projected Annual Return</span>
+                    <span className="font-semibold text-primary">{jet.projectedReturn}%</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Total Tokens</span>
+                    <span className="font-semibold">{jet.totalTokens.toLocaleString()}</span>
+                  </div>
                 </div>
 
                 {/* Action Buttons */}
                 <div className="space-y-3">
-                  <Button variant="hero" className="w-full" size="lg">
-                    Place Order
+                  <Button 
+                    variant="hero" 
+                    className="w-full" 
+                    size="lg"
+                    onClick={() => setShowBuyModal(true)}
+                  >
+                    Place Limit Buy Order
                   </Button>
                   <Button variant="outline" className="w-full">
                     Add to Watchlist
                   </Button>
                 </div>
 
-                {/* Summary */}
-                <div className="pt-4 border-t space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span>Tokens:</span>
-                    <span>{customAmount}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Price per token:</span>
-                    <span>${jet.tokenPrice}</span>
-                  </div>
-                  <div className="flex justify-between font-semibold">
-                    <span>Total:</span>
-                    <span>${(parseInt(customAmount) * jet.tokenPrice).toLocaleString()}</span>
-                  </div>
+                {/* Investment Summary */}
+                <div className="pt-4 border-t">
+                  <h4 className="font-semibold mb-2">Why Invest?</h4>
+                  <ul className="text-sm space-y-1 text-muted-foreground">
+                    <li>• Fractional ownership of luxury private jets</li>
+                    <li>• Passive rental income from charter flights</li>
+                    <li>• Professional management and maintenance</li>
+                    <li>• Blockchain-secured ownership tokens</li>
+                  </ul>
                 </div>
               </CardContent>
             </Card>
           </div>
         </div>
+
+        {/* Buy Order Modal */}
+        <BuyOrderModal
+          isOpen={showBuyModal}
+          onClose={() => setShowBuyModal(false)}
+          jet={jet}
+        />
       </div>
     </Layout>
   );
