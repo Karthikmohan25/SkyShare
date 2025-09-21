@@ -1,0 +1,15 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Sky background -->
+  <rect width="32" height="32" rx="6" fill="#1e40af"/>
+  
+  <!-- Jet silhouette -->
+  <path d="M8 16 L12 14 L20 14 L24 16 L20 18 L12 18 Z" fill="white"/>
+  <path d="M20 14 L22 12 L24 14 L22 16 Z" fill="white"/>
+  <path d="M12 14 L10 12 L8 14 L10 16 Z" fill="white"/>
+  
+  <!-- Wing details -->
+  <circle cx="16" cy="16" r="1" fill="#1e40af"/>
+  
+  <!-- Text hint -->
+  <text x="16" y="28" text-anchor="middle" font-family="Arial, sans-serif" font-size="6" fill="white">SKY</text>
+</svg>
