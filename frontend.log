@@ -2,24 +2,19 @@
 > sky-share-frontend@0.1.0 start
 > react-scripts start
 
-(node:3784) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(node:20585) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
 (Use `node --trace-deprecation ...` to show where the warning was created)
-(node:3784) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(node:20585) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
 Starting the development server...
 
-Compiled with warnings.
+Compiled successfully!
 
-[eslint] 
-src/App.js
-  Line 32:10:  'signer' is assigned a value but never used                                                                       no-unused-vars
-  Line 61:6:   React Hook useEffect has a missing dependency: 'initializeApp'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+You can now view sky-share-frontend in the browser.
 
-Search for the keywords to learn more about each warning.
-To ignore, add // eslint-disable-next-line to the line before.
+  Local:            http://localhost:3000
+  On Your Network:  http://172.22.32.200:3000
 
-WARNING in [eslint] 
-src/App.js
-  Line 32:10:  'signer' is assigned a value but never used                                                                       no-unused-vars
-  Line 61:6:   React Hook useEffect has a missing dependency: 'initializeApp'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+Note that the development build is not optimized.
+To create a production build, use npm run build.
 
-webpack compiled with 1 warning
+webpack compiled successfully
