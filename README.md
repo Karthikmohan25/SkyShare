@@ -4,6 +4,8 @@
 
 SkyShare enables fractional ownership of private jets through tokenization on XRPL with programmable rental income distribution on Flare Network.
 
+**Contributors:** [[Karthik Mohan](https://github.com/Karthikmohan25) • [Anish Kanade](https://github.com/AnishKanade) • [Tariqul Islam](https://github.com/nickelburger)]
+
 ## 🎯 Hackathon Track: Cross-Chain Finance & Real-World Assets
 
 - **XRPL**: Issue SKY-SHARE tokens representing jet ownership
